@@ -1,0 +1,161 @@
+name: christiangeorgelucas/emoji-tools
+version: 0.1.0
+language: typescript
+description: >-
+  Composable Axiom emoji and Unicode-grapheme text nodes wrapping node-emoji
+  (MIT, shortcode <-> unicode conversion + name lookup/search), emoji-regex
+  (MIT, Mathias Bynens' spec-tracking emoji-matching regex) for detection/
+  extraction/counting, and the built-in ECMAScript Intl.Segmenter in
+  grapheme-cluster mode for correct user-perceived-character segmentation
+  and counting of text containing emoji/ZWJ sequences/skin-tone modifiers.
+  Fifteen nodes: emojize/demojize, contains/count/extract/strip/replace
+  emoji, count/segment grapheme clusters, get-name/lookup-by-name/search
+  emoji, structurally analyze a single emoji (code points, ZWJ, skin tone,
+  regional-indicator flag), apply or strip a Fitzpatrick skin-tone
+  modifier, and detect regional-indicator flag sequences with their
+  decoded ISO country codes. Every node is a stateless, deterministic,
+  single-input/single-output transform -- no persistence, no network, no
+  wall-clock, no randomness. Full dependency tree (including node-emoji's
+  own emojilib/skin-tone/char-regex/@sindresorhus-is transitive deps)
+  verified MIT.
+license: MIT
+author: Christian George Lucas
+tags:
+  - emoji
+  - unicode
+  - grapheme
+  - text
+  - shortcode
+  - zwj
+  - skin-tone
+  - flag
+  - segmentation
+  - string
+nodes:
+    - name: Emojize
+      input: EmojiText
+      output: EmojiTextResult
+      description: >-
+        Converts every :shortcode: in text to its Unicode emoji character
+        (e.g. ":fire:" -> the fire emoji) via node-emoji's shortcode
+        database. Unrecognized shortcodes and text with no shortcodes pass
+        through unchanged. Errors on text over 20,000 UTF-16 code units.
+    - name: Demojize
+      input: EmojiText
+      output: EmojiTextResult
+      description: >-
+        Converts every Unicode emoji in text to its :shortcode: name (e.g.
+        the fire emoji -> ":fire:") via node-emoji's shortcode database.
+        Emoji absent from that database pass through unchanged. Errors on
+        text over 20,000 UTF-16 code units.
+    - name: ContainsEmoji
+      input: EmojiText
+      output: EmojiContainsResult
+      description: >-
+        Reports whether text contains at least one emoji, matched by the
+        emoji-regex library (covers single-code-point emoji, skin-tone
+        modified forms, ZWJ sequences, and regional-indicator flags).
+        Errors on text over 20,000 UTF-16 code units.
+    - name: CountEmoji
+      input: EmojiText
+      output: EmojiCountResult
+      description: >-
+        Counts emoji occurrences in text via emoji-regex; a skin-toned
+        emoji, ZWJ sequence, or flag pair counts as ONE emoji, not one per
+        code point. Errors on text over 20,000 UTF-16 code units.
+    - name: ExtractEmoji
+      input: EmojiText
+      output: EmojiExtractResult
+      description: >-
+        Lists every emoji occurrence in text, in order, with its Unicode
+        character(s), node-emoji shortcode name (when known), and UTF-16
+        code-unit [start,end) span. Capped at 2,000 matches. Errors on text
+        over 20,000 UTF-16 code units.
+    - name: StripEmoji
+      input: EmojiText
+      output: EmojiTextResult
+      description: >-
+        Removes every emoji from text via node-emoji, collapsing
+        surrounding whitespace where an emoji was removed. Errors on text
+        over 20,000 UTF-16 code units.
+    - name: ReplaceEmoji
+      input: EmojiReplaceRequest
+      output: EmojiTextResult
+      description: >-
+        Replaces every emoji in text with a caller-supplied placeholder
+        string, or (when with_name is true) each emoji's :shortcode: name
+        (falling back to a U+XXXX code-point label if unknown). With
+        neither set, emoji are removed entirely. Matching is by emoji-regex,
+        so composed sequences (skin tone/ZWJ/flag) replace as one unit.
+        Errors on text over 20,000 or placeholder over 256 UTF-16 code
+        units.
+    - name: CountGraphemes
+      input: EmojiText
+      output: EmojiCountResult
+      description: >-
+        Counts grapheme clusters (user-perceived characters) in text using
+        the built-in Intl.Segmenter in grapheme mode -- the correct notion
+        of text "length" for strings with emoji, since a skin-toned/ZWJ/
+        flag sequence counts as ONE cluster, unlike UTF-16 length or raw
+        code-point count. Errors on text over 20,000 UTF-16 code units.
+    - name: SegmentGraphemes
+      input: EmojiText
+      output: EmojiGraphemeResult
+      description: >-
+        Splits text into its grapheme clusters (user-perceived characters)
+        via the built-in Intl.Segmenter in grapheme mode; each element is
+        one cluster in source order, and joining them with "" reproduces
+        text exactly. Errors on text over 20,000 UTF-16 code units.
+    - name: GetEmojiName
+      input: EmojiToken
+      output: EmojiNameResult
+      description: >-
+        Looks up the node-emoji :shortcode: name for a single emoji token
+        (without colons). found is false when the emoji is absent from
+        node-emoji's curated database. Requires a non-empty emoji of at
+        most 64 UTF-16 code units.
+    - name: LookupEmojiByName
+      input: EmojiName
+      output: EmojiLookupResult
+      description: >-
+        Looks up the Unicode emoji character(s) for a :shortcode: name (the
+        reverse of GetEmojiName); accepts the name with or without
+        surrounding colons. found is false when name has no match. Requires
+        a non-empty name of at most 64 UTF-16 code units.
+    - name: SearchEmoji
+      input: EmojiSearchRequest
+      output: EmojiSearchResult
+      description: >-
+        Finds every known emoji whose :shortcode: name contains keyword as
+        a literal, case-sensitive substring, via node-emoji's database.
+        Capped at 200 results. Requires a non-empty keyword of at most 64
+        UTF-16 code units.
+    - name: AnalyzeEmoji
+      input: EmojiToken
+      output: EmojiAnalysis
+      description: >-
+        Structurally analyzes a single emoji token: its Unicode code points,
+        whether it is a ZWJ-joined sequence, whether/which Fitzpatrick
+        skin-tone modifier it carries, whether it is exactly a two-part
+        regional-indicator flag sequence (with decoded ISO 3166-1 alpha-2
+        country code), and its node-emoji name if known. is_emoji is false
+        (with only code_points populated) when the token isn't a single
+        recognized emoji sequence end-to-end. Requires a non-empty emoji of
+        at most 64 UTF-16 code units.
+    - name: ApplySkinTone
+      input: EmojiSkinToneRequest
+      output: EmojiTextResult
+      description: >-
+        Applies or removes a Fitzpatrick skin-tone modifier on a base
+        emoji, wrapping the skin-tone package. tone must be one of "none"
+        (strip), "white", "creamWhite", "lightBrown", "brown", "darkBrown".
+        An emoji that doesn't support skin tone passes through unchanged.
+        Requires a non-empty emoji of at most 64 UTF-16 code units.
+    - name: DetectFlags
+      input: EmojiText
+      output: EmojiFlagResult
+      description: >-
+        Scans text for every regional-indicator flag sequence (two
+        consecutive regional-indicator symbols) and decodes each to its ISO
+        3166-1 alpha-2 code, with its UTF-16 code-unit span. Capped at 500
+        flags. Errors on text over 20,000 UTF-16 code units.

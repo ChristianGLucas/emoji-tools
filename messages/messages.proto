@@ -1,0 +1,277 @@
+// This file defines the data contracts (messages) for your Axiom package.
+// Every node's --input and --output refers to a message defined here.
+//
+// Run `axiom create message <Name>` to scaffold a new message below.
+// Run `axiom generate` to compile these definitions into language bindings in gen/.
+//
+// DOCUMENTATION
+//   Comments written directly above a message or field declaration are extracted
+//   automatically at publish time and shown in the Axiom registry as documentation.
+//   Write your descriptions there — no separate doc files needed.
+//
+//   Leading comment  (no blank line before the declaration) → registry description ✓
+//   Detached comment (blank line before the declaration)    → ignored by registry  ✗
+//
+// This file is yours to edit. Axiom only appends new message blocks — it never
+// overwrites or removes content you have written.
+
+syntax = "proto3";
+
+package christiangeorgelucas.emoji_tools;
+
+// Data contracts for christiangeorgelucas/emoji-tools — stateless, deterministic
+// emoji and Unicode-grapheme text operations. Wraps node-emoji (MIT, shortcode
+// <-> unicode conversion + name lookup, itself built only on the MIT emojilib,
+// skin-tone, char-regex and @sindresorhus/is packages -- full transitive tree
+// verified MIT), emoji-regex (MIT, Mathias Bynens' canonical emoji-matching
+// regex, spec-tracking) for detection/extraction/counting, and the ECMAScript
+// built-in Intl.Segmenter (native to the Node.js runtime, zero additional
+// dependency) in grapheme-cluster mode for user-perceived-character
+// segmentation and counting -- the correct notion of text "length" once
+// emoji/ZWJ sequences/skin-tone modifiers are involved, which differs from
+// both raw code-point count and UTF-16 length. Flag/regional-indicator and
+// skin-tone-modifier/ZWJ analysis is small deterministic glue over fixed,
+// published Unicode code-point ranges (regional indicators U+1F1E6-U+1F1FF,
+// Fitzpatrick modifiers U+1F3FB-U+1F3FF, ZWJ U+200D) -- not a reimplementation
+// of any library's algorithm.
+//
+// SIZE BOUND. `text` fields are capped at 20,000 UTF-16 code units (ample for
+// any single message/caption/document passage a caller would send) to bound
+// per-invoke regex/segmentation cost. Oversized input returns a structured
+// `error` rather than doing unbounded work. `emoji`/`name` single-token
+// fields are capped at 64 UTF-16 code units -- generous for even the longest
+// real ZWJ sequences (family/profession combinations run ~10-15 code units)
+// while rejecting pathological input outright.
+//
+// INDICES. Wherever a node reports a position (`start_index`/`end_index`),
+// it is a UTF-16 code-unit offset into `text` -- JavaScript's native string
+// index, and what `String.prototype.slice`/`.substring` expect. This is
+// deliberately NOT a grapheme-cluster index; use SegmentGraphemes if you
+// need cluster-aligned offsets.
+//
+// ERROR CONTRACT. Every output message carries a string `error` field, set
+// (non-empty) instead of a crash on oversized/malformed input; all other
+// fields are unset/zero-valued when `error` is set. Malformed input (lone
+// surrogates, incomplete ZWJ sequences, truncated flag pairs) is handled
+// gracefully by the underlying libraries/segmenter -- it degrades to
+// "not recognized as emoji" rather than throwing.
+//
+// DETERMINISM. Every node is a pure function of its input fields -- same
+// input, same output, always. No network, no wall-clock, no randomness.
+
+// The canonical input envelope for every whole-string operation in this
+// package. Only `text` is required.
+message EmojiText {
+  // The text to operate on. Required (non-null; empty string is valid and
+  // simply yields "no emoji found" results, not an error). Capped at 20,000
+  // UTF-16 code units -- longer input returns a structured error.
+  string text = 1;
+}
+
+// Shared result envelope for every node that transforms one string of text
+// into another (Emojize, Demojize, StripEmoji, ReplaceEmoji, ApplySkinTone).
+message EmojiTextResult {
+  // The transformed text (or, for ApplySkinTone, the resulting single
+  // emoji). Unset when `error` is set.
+  string text = 1;
+  // Set (non-empty) on oversized/invalid input; `text` is unset.
+  string error = 2;
+}
+
+// Result of ContainsEmoji.
+message EmojiContainsResult {
+  bool contains_emoji = 1;
+  string error = 2;
+}
+
+// Result of CountEmoji / CountGraphemes -- a single non-negative count.
+message EmojiCountResult {
+  int32 count = 1;
+  string error = 2;
+}
+
+// A single emoji found in a string by ExtractEmoji, with its position.
+message EmojiMatch {
+  // The matched emoji substring exactly as it appears in the source text
+  // (may be a multi-code-point ZWJ/skin-tone/flag sequence).
+  string emoji = 1;
+  // The emoji's :shortcode: name if node-emoji's database recognizes it;
+  // unset for emoji present in Unicode but absent from that database (e.g.
+  // some newer or highly composed ZWJ sequences).
+  optional string name = 2;
+  // UTF-16 code-unit offset of the first code unit of the match (inclusive).
+  int32 start_index = 3;
+  // UTF-16 code-unit offset one past the last code unit of the match
+  // (exclusive) -- i.e. text.slice(start_index, end_index) === emoji.
+  int32 end_index = 4;
+}
+
+// Result of ExtractEmoji: every emoji occurrence in `text`, in order.
+message EmojiExtractResult {
+  // Capped at 2,000 matches (well beyond any realistic message) to bound
+  // response size on pathological input; matches beyond the cap are
+  // silently dropped, not an error.
+  repeated EmojiMatch matches = 1;
+  string error = 2;
+}
+
+// Input for ReplaceEmoji.
+message EmojiReplaceRequest {
+  // The text to operate on. Required, capped at 20,000 UTF-16 code units.
+  string text = 1;
+  // Literal string to substitute for every emoji found. Takes precedence
+  // over `with_name` when both are set. Capped at 256 UTF-16 code units.
+  optional string placeholder = 2;
+  // When true and `placeholder` is unset, replace each emoji with its
+  // ":shortcode:" name (unrecognized emoji fall back to the literal
+  // Unicode Consortium code-point label, e.g. "U+1FAE8"). When both
+  // `placeholder` and `with_name` are unset/false, defaults to removing
+  // the emoji entirely (equivalent to StripEmoji).
+  optional bool with_name = 3;
+}
+
+// Result of SegmentGraphemes: `text` split into user-perceived characters
+// (grapheme clusters) via Intl.Segmenter's "grapheme" granularity -- the
+// Unicode Standard Annex #29 extended grapheme cluster algorithm, built
+// into the JavaScript runtime.
+message EmojiGraphemeResult {
+  // Each element is one grapheme cluster (e.g. a single base letter, or an
+  // entire flag/skin-toned/ZWJ-joined emoji sequence as ONE element). Capped
+  // at 20,000 clusters (bounded by the `text` length cap above).
+  repeated string clusters = 1;
+  string error = 2;
+}
+
+// Input naming a single emoji character or sequence (as opposed to a
+// free-form string to scan). Used by nodes that operate on exactly one
+// emoji token.
+message EmojiToken {
+  // A single emoji, e.g. a thumbs-up character, or a multi-code-point
+  // sequence like a skin-toned or ZWJ-joined emoji. Required, capped at 64
+  // UTF-16 code units.
+  string emoji = 1;
+}
+
+// Result of GetEmojiName: the human-readable name for a single emoji token.
+message EmojiNameResult {
+  // The node-emoji shortcode name (without colons), e.g. "thumbsup". Unset
+  // when `found` is false.
+  optional string name = 1;
+  // False when `emoji` is not present in node-emoji's database (it may
+  // still be a valid, renderable Unicode emoji -- the database is a curated
+  // subset, not exhaustive of every Unicode emoji sequence ever assigned).
+  bool found = 2;
+  string error = 3;
+}
+
+// Input naming an emoji by its shortcode/name (the reverse direction of
+// GetEmojiName).
+message EmojiName {
+  // A shortcode name, with or without surrounding colons -- both
+  // "thumbsup" and ":thumbsup:" are accepted. Required, capped at 64 UTF-16
+  // code units.
+  string name = 1;
+}
+
+// Result of LookupEmojiByName.
+message EmojiLookupResult {
+  // The emoji character(s) for `name`. Unset when `found` is false.
+  optional string emoji = 1;
+  // False when `name` has no match in node-emoji's database.
+  bool found = 2;
+  string error = 3;
+}
+
+// Input for SearchEmoji: a free-text keyword or substring to match against
+// every known emoji's name.
+message EmojiSearchRequest {
+  // Literal, case-sensitive substring to search for within emoji names
+  // (names in the database are lowercase, e.g. "cat" matches but "CAT"
+  // does not). Required non-empty, capped at 64 UTF-16 code units.
+  string keyword = 1;
+}
+
+// One (emoji, name) pair returned by SearchEmoji.
+message EmojiNameEmojiPair {
+  string emoji = 1;
+  string name = 2;
+}
+
+// Result of SearchEmoji.
+message EmojiSearchResult {
+  // Every known emoji whose name contains `keyword`, in the wrapped
+  // library's database order. Capped at 200 results.
+  repeated EmojiNameEmojiPair results = 1;
+  string error = 2;
+}
+
+// Result of AnalyzeEmoji: a structural breakdown of a single emoji token --
+// its code points and which special Unicode mechanisms (ZWJ joining, skin-
+// tone modification, regional-indicator flag) it uses.
+message EmojiAnalysis {
+  // False when `emoji` does not match the emoji-regex pattern across its
+  // ENTIRE length (a partial match, e.g. text with a trailing/leading
+  // non-emoji character, also yields false) -- i.e. it is not recognized as
+  // a single emoji sequence. All fields below except `code_points` are
+  // zero-valued/unset in that case.
+  bool is_emoji = 1;
+  // Every Unicode code point in `emoji`, in order, formatted as "U+XXXX"
+  // (uppercase hex, no leading zeros beyond 4 digits). Includes joiner and
+  // modifier code points, not just the "visible" base emoji.
+  repeated string code_points = 2;
+  // True if `emoji` contains U+200D (ZERO WIDTH JOINER) anywhere -- it is a
+  // composed sequence (e.g. family, profession, or multi-person groupings)
+  // rather than a single base emoji.
+  bool is_zwj_sequence = 3;
+  // True if `emoji` contains a Fitzpatrick skin-tone modifier
+  // (U+1F3FB-U+1F3FF) anywhere in the sequence.
+  bool has_skin_tone_modifier = 4;
+  // Which skin tone is present, one of "white", "creamWhite", "lightBrown",
+  // "brown", "darkBrown" (matching the skin-tone package's vocabulary).
+  // Unset when has_skin_tone_modifier is false.
+  optional string skin_tone = 5;
+  // True if `emoji` is exactly a two-character regional-indicator flag
+  // sequence (each in U+1F1E6-U+1F1FF).
+  bool is_regional_indicator_flag = 6;
+  // ISO 3166-1 alpha-2 country/region code decoded from the regional
+  // indicators, e.g. "US", "JP". Unset when is_regional_indicator_flag is
+  // false. NOTE: this decodes the letter pair mechanically; not every
+  // resulting two-letter code corresponds to an assigned, renderable flag
+  // (Unicode/vendors only render a curated subset) -- the code is reported
+  // regardless.
+  optional string country_code = 7;
+  // The node-emoji shortcode name for `emoji`, if its database has one.
+  optional string name = 8;
+  string error = 9;
+}
+
+// Input for ApplySkinTone.
+message EmojiSkinToneRequest {
+  // The base emoji to modify, e.g. a hand gesture or person emoji. Required,
+  // capped at 64 UTF-16 code units.
+  string emoji = 1;
+  // One of "none" (strip any existing skin-tone modifier), "white",
+  // "creamWhite", "lightBrown", "brown", "darkBrown" (Fitzpatrick types
+  // 1-2 through 6). Required. Any other value returns a structured error.
+  string tone = 2;
+}
+
+// A single regional-indicator flag sequence found by DetectFlags, with its
+// decoded country code and position.
+message EmojiFlag {
+  // The two-character flag sequence exactly as found in the source text.
+  string emoji = 1;
+  // ISO 3166-1 alpha-2 code decoded from the pair, e.g. "FR".
+  string country_code = 2;
+  int32 start_index = 3;
+  int32 end_index = 4;
+}
+
+// Result of DetectFlags: every regional-indicator flag sequence found by
+// scanning a full string (as opposed to AnalyzeEmoji, which inspects one
+// already-isolated token).
+message EmojiFlagResult {
+  // Capped at 500 flags found.
+  repeated EmojiFlag flags = 1;
+  string error = 2;
+}
