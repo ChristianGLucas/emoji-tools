@@ -75,9 +75,11 @@ nodes:
       input: EmojiText
       output: EmojiTextResult
       description: >-
-        Removes every emoji from text via node-emoji, collapsing
-        surrounding whitespace where an emoji was removed. Errors on text
-        over 20,000 UTF-16 code units.
+        Removes every emoji from text via the same emoji-regex scan used by
+        CountEmoji/ExtractEmoji/ReplaceEmoji, so a skin-toned/ZWJ/flag
+        composed sequence is removed as one unit. Surrounding text is
+        otherwise untouched (no whitespace collapsing). Errors on text over
+        20,000 UTF-16 code units.
     - name: ReplaceEmoji
       input: EmojiReplaceRequest
       output: EmojiTextResult

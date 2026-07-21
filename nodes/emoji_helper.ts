@@ -4,7 +4,7 @@
 // constants shared across nodes so each node file stays a thin call into
 // node-emoji / emoji-regex / Intl.Segmenter plus its own message shaping.
 
-import { emojify, unemojify, find, get, has, replace, search, strip, which } from 'node-emoji';
+import { emojify, unemojify, get, search, which } from 'node-emoji';
 import emojiRegexFactory from 'emoji-regex';
 import skinToneOf from 'skin-tone';
 
@@ -180,4 +180,4 @@ export function segmentGraphemes(text: string): string[] {
   return out;
 }
 
-export { emojify, unemojify, find, get, has, replace, search, strip, which, skinToneOf };
+export { emojify, unemojify, get, search, which, skinToneOf };
