@@ -1,6 +1,6 @@
 # christiangeorgelucas/emoji-tools
 
-Composable [Axiom](https://axiom.dev) nodes for **deterministic emoji and
+Composable [Axiom](https://axiomide.com) nodes for **deterministic emoji and
 Unicode-grapheme text operations**. Built for the Axiom marketplace.
 
 Wraps [`node-emoji`](https://www.npmjs.com/package/node-emoji) (MIT,
