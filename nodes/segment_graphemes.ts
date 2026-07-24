@@ -1,6 +1,6 @@
 import { EmojiText, EmojiGraphemeResult } from '../gen/messages_pb';
 import { AxiomContext } from '../gen/axiomContext';
-import { checkText, segmentGraphemes as splitIntoGraphemes } from './emoji_helper';
+import { segmentGraphemes as splitIntoGraphemes } from './emoji_helper';
 
 /**
  * Splits `text` into its grapheme clusters (user-perceived characters),
@@ -18,11 +18,6 @@ import { checkText, segmentGraphemes as splitIntoGraphemes } from './emoji_helpe
 export function segmentGraphemes(ax: AxiomContext, input: EmojiText): EmojiGraphemeResult {
   const result = new EmojiGraphemeResult();
   const text = input.getText() ?? '';
-  const err = checkText(text);
-  if (err) {
-    result.setError(err);
-    return result;
-  }
   result.setClustersList(splitIntoGraphemes(text));
   return result;
 }

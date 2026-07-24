@@ -1,7 +1,6 @@
 import { EmojiToken } from '../gen/messages_pb';
 import { analyzeEmoji } from './analyze_emoji';
 import { ctx } from './testkit';
-import { MAX_TOKEN_LENGTH } from './emoji_helper';
 
 describe('AnalyzeEmoji', () => {
   it('reports code points and skin tone for a skin-toned emoji, cross-checked against a from-scratch hand computation (independent oracle)', () => {
@@ -84,10 +83,4 @@ describe('AnalyzeEmoji', () => {
     expect(result.getError()).not.toBe('');
   });
 
-  it('returns a structured error for an oversized token', () => {
-    const input = new EmojiToken();
-    input.setEmoji('a'.repeat(MAX_TOKEN_LENGTH + 1));
-    const result = analyzeEmoji(ctx, input);
-    expect(result.getError()).not.toBe('');
-  });
 });

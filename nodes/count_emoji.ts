@@ -1,6 +1,6 @@
 import { EmojiText, EmojiCountResult } from '../gen/messages_pb';
 import { AxiomContext } from '../gen/axiomContext';
-import { checkText, findAllEmoji } from './emoji_helper';
+import { findAllEmoji } from './emoji_helper';
 
 /**
  * Counts the emoji occurrences in `text`, matched by the emoji-regex
@@ -14,11 +14,6 @@ import { checkText, findAllEmoji } from './emoji_helper';
 export function countEmoji(ax: AxiomContext, input: EmojiText): EmojiCountResult {
   const result = new EmojiCountResult();
   const text = input.getText() ?? '';
-  const err = checkText(text);
-  if (err) {
-    result.setError(err);
-    return result;
-  }
   result.setCount(findAllEmoji(text).length);
   return result;
 }

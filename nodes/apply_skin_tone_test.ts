@@ -1,7 +1,6 @@
 import { EmojiSkinToneRequest } from '../gen/messages_pb';
 import { applySkinTone } from './apply_skin_tone';
 import { ctx } from './testkit';
-import { MAX_TOKEN_LENGTH } from './emoji_helper';
 
 describe('ApplySkinTone', () => {
   it('applies the darkBrown modifier, matching the exact published Fitzpatrick code point U+1F3FF (independent oracle)', () => {
@@ -62,11 +61,4 @@ describe('ApplySkinTone', () => {
     expect(result.getError()).not.toBe('');
   });
 
-  it('returns a structured error for an oversized emoji token', () => {
-    const input = new EmojiSkinToneRequest();
-    input.setEmoji('a'.repeat(MAX_TOKEN_LENGTH + 1));
-    input.setTone('brown');
-    const result = applySkinTone(ctx, input);
-    expect(result.getError()).not.toBe('');
-  });
 });

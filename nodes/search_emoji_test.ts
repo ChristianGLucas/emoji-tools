@@ -1,7 +1,6 @@
 import { EmojiSearchRequest } from '../gen/messages_pb';
 import { searchEmoji } from './search_emoji';
 import { ctx } from './testkit';
-import { MAX_TOKEN_LENGTH } from './emoji_helper';
 
 describe('SearchEmoji', () => {
   it('finds every known emoji whose name contains "cat", including the plain "cat" emoji itself (independent oracle: published gemoji/GitHub cheat sheet lists cat/smiley_cat/joy_cat etc.)', () => {
@@ -40,10 +39,4 @@ describe('SearchEmoji', () => {
     expect(result.getError()).not.toBe('');
   });
 
-  it('returns a structured error for an oversized keyword', () => {
-    const input = new EmojiSearchRequest();
-    input.setKeyword('a'.repeat(MAX_TOKEN_LENGTH + 1));
-    const result = searchEmoji(ctx, input);
-    expect(result.getError()).not.toBe('');
-  });
 });

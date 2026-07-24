@@ -1,6 +1,6 @@
 import { EmojiText, EmojiTextResult } from '../gen/messages_pb';
 import { AxiomContext } from '../gen/axiomContext';
-import { checkText, findAllEmoji } from './emoji_helper';
+import { findAllEmoji } from './emoji_helper';
 
 /**
  * Removes every emoji from `text`, returning the cleaned string with the
@@ -17,12 +17,6 @@ import { checkText, findAllEmoji } from './emoji_helper';
 export function stripEmoji(ax: AxiomContext, input: EmojiText): EmojiTextResult {
   const result = new EmojiTextResult();
   const text = input.getText() ?? '';
-  const err = checkText(text);
-  if (err) {
-    result.setError(err);
-    return result;
-  }
-
   const matches = findAllEmoji(text);
   if (matches.length === 0) {
     result.setText(text);

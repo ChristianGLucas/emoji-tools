@@ -1,7 +1,6 @@
 import { EmojiText } from '../gen/messages_pb';
 import { demojize } from './demojize';
 import { ctx } from './testkit';
-import { MAX_TEXT_LENGTH } from './emoji_helper';
 
 describe('Demojize', () => {
   it('converts the published Unicode FIRE code point (U+1F525, independent Unicode Consortium oracle) to its shortcode', () => {
@@ -41,10 +40,4 @@ describe('Demojize', () => {
     expect(result.getText()).toBe('');
   });
 
-  it('returns a structured error on oversized text', () => {
-    const input = new EmojiText();
-    input.setText('a'.repeat(MAX_TEXT_LENGTH + 1));
-    const result = demojize(ctx, input);
-    expect(result.getError()).not.toBe('');
-  });
 });

@@ -1,7 +1,6 @@
 import { EmojiReplaceRequest } from '../gen/messages_pb';
 import { replaceEmoji } from './replace_emoji';
 import { ctx } from './testkit';
-import { MAX_TEXT_LENGTH, MAX_PLACEHOLDER_LENGTH } from './emoji_helper';
 
 describe('ReplaceEmoji', () => {
   it('replaces every emoji with a literal placeholder', () => {
@@ -59,20 +58,5 @@ describe('ReplaceEmoji', () => {
     input.setPlaceholder('X');
     const result = replaceEmoji(ctx, input);
     expect(result.getText()).toBe('plain text');
-  });
-
-  it('returns a structured error on oversized text', () => {
-    const input = new EmojiReplaceRequest();
-    input.setText('a'.repeat(MAX_TEXT_LENGTH + 1));
-    const result = replaceEmoji(ctx, input);
-    expect(result.getError()).not.toBe('');
-  });
-
-  it('returns a structured error on an oversized placeholder', () => {
-    const input = new EmojiReplaceRequest();
-    input.setText('\u{1F525}');
-    input.setPlaceholder('x'.repeat(MAX_PLACEHOLDER_LENGTH + 1));
-    const result = replaceEmoji(ctx, input);
-    expect(result.getError()).not.toBe('');
   });
 });

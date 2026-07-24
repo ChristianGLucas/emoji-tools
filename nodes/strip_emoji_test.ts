@@ -1,7 +1,6 @@
 import { EmojiText } from '../gen/messages_pb';
 import { stripEmoji } from './strip_emoji';
 import { ctx } from './testkit';
-import { MAX_TEXT_LENGTH } from './emoji_helper';
 
 describe('StripEmoji', () => {
   it('removes a known emoji, leaving the surrounding text untouched (no whitespace collapsing)', () => {
@@ -56,10 +55,4 @@ describe('StripEmoji', () => {
     expect(result.getText()).toBe('');
   });
 
-  it('returns a structured error on oversized text', () => {
-    const input = new EmojiText();
-    input.setText('a'.repeat(MAX_TEXT_LENGTH + 1));
-    const result = stripEmoji(ctx, input);
-    expect(result.getError()).not.toBe('');
-  });
 });

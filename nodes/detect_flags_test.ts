@@ -1,7 +1,6 @@
 import { EmojiText } from '../gen/messages_pb';
 import { detectFlags } from './detect_flags';
 import { ctx } from './testkit';
-import { MAX_TEXT_LENGTH } from './emoji_helper';
 
 describe('DetectFlags', () => {
   it('finds two adjacent flags and decodes both correctly, independently re-derived by hand arithmetic (not by calling the node\'s decode logic)', () => {
@@ -47,10 +46,4 @@ describe('DetectFlags', () => {
     expect(result.getFlagsList()).toHaveLength(0);
   });
 
-  it('returns a structured error on oversized text', () => {
-    const input = new EmojiText();
-    input.setText('a'.repeat(MAX_TEXT_LENGTH + 1));
-    const result = detectFlags(ctx, input);
-    expect(result.getError()).not.toBe('');
-  });
 });

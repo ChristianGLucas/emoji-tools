@@ -1,7 +1,6 @@
 import { EmojiText } from '../gen/messages_pb';
 import { containsEmoji } from './contains_emoji';
 import { ctx } from './testkit';
-import { MAX_TEXT_LENGTH } from './emoji_helper';
 
 describe('ContainsEmoji', () => {
   it('is true for text containing a known Unicode emoji', () => {
@@ -33,10 +32,4 @@ describe('ContainsEmoji', () => {
     expect(result.getContainsEmoji()).toBe(true);
   });
 
-  it('returns a structured error on oversized text', () => {
-    const input = new EmojiText();
-    input.setText('a'.repeat(MAX_TEXT_LENGTH + 1));
-    const result = containsEmoji(ctx, input);
-    expect(result.getError()).not.toBe('');
-  });
 });

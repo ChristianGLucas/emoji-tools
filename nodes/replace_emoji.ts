@@ -1,6 +1,6 @@
 import { EmojiReplaceRequest, EmojiTextResult } from '../gen/messages_pb';
 import { AxiomContext } from '../gen/axiomContext';
-import { checkText, findAllEmoji, nameFor, codePointLabel, MAX_PLACEHOLDER_LENGTH, textTooLongError } from './emoji_helper';
+import { findAllEmoji, nameFor, codePointLabel } from './emoji_helper';
 
 /**
  * Replaces every emoji in `text` with either a caller-supplied literal
@@ -10,25 +10,15 @@ import { checkText, findAllEmoji, nameFor, codePointLabel, MAX_PLACEHOLDER_LENGT
  * neither `placeholder` nor `with_name` is set, every emoji is removed
  * (equivalent to StripEmoji). Matching uses the same emoji-regex scan as
  * CountEmoji/ExtractEmoji, so a skin-toned/ZWJ/flag sequence is replaced
- * as a single unit, not per code point. `text` over 20,000 or `placeholder`
- * over 256 UTF-16 code units returns a structured error.
+ * as a single unit, not per code point.
  *
  * @param ax - Platform context: ax.log for logging, ax.secrets for secrets.
  */
 export function replaceEmoji(ax: AxiomContext, input: EmojiReplaceRequest): EmojiTextResult {
   const result = new EmojiTextResult();
   const text = input.getText() ?? '';
-  const textErr = checkText(text);
-  if (textErr) {
-    result.setError(textErr);
-    return result;
-  }
   const hasPlaceholder = input.hasPlaceholder();
   const placeholder = input.getPlaceholder() ?? '';
-  if (hasPlaceholder && placeholder.length > MAX_PLACEHOLDER_LENGTH) {
-    result.setError(textTooLongError('placeholder', MAX_PLACEHOLDER_LENGTH));
-    return result;
-  }
   const withName = input.hasWithName() && input.getWithName();
 
   const matches = findAllEmoji(text);

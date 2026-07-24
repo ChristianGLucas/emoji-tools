@@ -1,6 +1,6 @@
 import { EmojiText, EmojiCountResult } from '../gen/messages_pb';
 import { AxiomContext } from '../gen/axiomContext';
-import { checkText, segmentGraphemes } from './emoji_helper';
+import { segmentGraphemes } from './emoji_helper';
 
 /**
  * Counts the grapheme clusters (user-perceived characters) in `text`, using
@@ -18,11 +18,6 @@ import { checkText, segmentGraphemes } from './emoji_helper';
 export function countGraphemes(ax: AxiomContext, input: EmojiText): EmojiCountResult {
   const result = new EmojiCountResult();
   const text = input.getText() ?? '';
-  const err = checkText(text);
-  if (err) {
-    result.setError(err);
-    return result;
-  }
   result.setCount(segmentGraphemes(text).length);
   return result;
 }

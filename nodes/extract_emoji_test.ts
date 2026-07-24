@@ -1,7 +1,6 @@
 import { EmojiText } from '../gen/messages_pb';
 import { extractEmoji } from './extract_emoji';
 import { ctx } from './testkit';
-import { MAX_TEXT_LENGTH } from './emoji_helper';
 
 describe('ExtractEmoji', () => {
   it('lists each emoji with the exact UTF-16 offsets hand-computed via String.prototype.indexOf (independent of the matching implementation)', () => {
@@ -68,11 +67,4 @@ describe('ExtractEmoji', () => {
     expect(m.hasName()).toBe(false);
   });
 
-  it('returns a structured error on oversized text', () => {
-    const input = new EmojiText();
-    input.setText('a'.repeat(MAX_TEXT_LENGTH + 1));
-    const result = extractEmoji(ctx, input);
-    expect(result.getError()).not.toBe('');
-    expect(result.getMatchesList()).toHaveLength(0);
-  });
 });

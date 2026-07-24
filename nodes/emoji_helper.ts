@@ -8,29 +8,9 @@ import { emojify, unemojify, get, search, which } from 'node-emoji';
 import emojiRegexFactory from 'emoji-regex';
 import skinToneOf from 'skin-tone';
 
-// ---- Size bounds (see messages.proto's package-level comment for rationale) ----
-export const MAX_TEXT_LENGTH = 20_000;
-export const MAX_TOKEN_LENGTH = 64;
-export const MAX_PLACEHOLDER_LENGTH = 256;
-export const MAX_EXTRACT_MATCHES = 2_000;
-export const MAX_SEARCH_RESULTS = 200;
-export const MAX_FLAGS = 500;
-
-export function textTooLongError(fieldName: string, max: number): string {
-  return `${fieldName} exceeds maximum length of ${max} UTF-16 code units`;
-}
-
-/** Validates `text` against MAX_TEXT_LENGTH. Returns an error string, or '' if valid. */
-export function checkText(text: string | undefined | null): string {
-  if (text == null) return '';
-  if (text.length > MAX_TEXT_LENGTH) return textTooLongError('text', MAX_TEXT_LENGTH);
-  return '';
-}
-
-/** Validates a single-token field (emoji/name/keyword) against MAX_TOKEN_LENGTH. */
+/** Validates a single-token field (emoji/name/keyword) is non-empty. */
 export function checkToken(value: string | undefined | null, fieldName: string): string {
   if (value == null || value.length === 0) return `${fieldName} is required`;
-  if (value.length > MAX_TOKEN_LENGTH) return textTooLongError(fieldName, MAX_TOKEN_LENGTH);
   return '';
 }
 

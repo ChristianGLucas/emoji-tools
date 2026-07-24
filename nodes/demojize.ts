@@ -1,6 +1,6 @@
 import { EmojiText, EmojiTextResult } from '../gen/messages_pb';
 import { AxiomContext } from '../gen/axiomContext';
-import { checkText, unemojify } from './emoji_helper';
+import { unemojify } from './emoji_helper';
 
 /**
  * Converts every Unicode emoji in `text` to its ":shortcode:" name (e.g.
@@ -15,11 +15,6 @@ import { checkText, unemojify } from './emoji_helper';
 export function demojize(ax: AxiomContext, input: EmojiText): EmojiTextResult {
   const result = new EmojiTextResult();
   const text = input.getText() ?? '';
-  const err = checkText(text);
-  if (err) {
-    result.setError(err);
-    return result;
-  }
   result.setText(unemojify(text));
   return result;
 }

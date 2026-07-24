@@ -1,6 +1,6 @@
 import { EmojiText, EmojiContainsResult } from '../gen/messages_pb';
 import { AxiomContext } from '../gen/axiomContext';
-import { checkText, containsEmoji as hasEmoji } from './emoji_helper';
+import { containsEmoji as hasEmoji } from './emoji_helper';
 
 /**
  * Reports whether `text` contains at least one emoji, matched by the
@@ -14,11 +14,6 @@ import { checkText, containsEmoji as hasEmoji } from './emoji_helper';
 export function containsEmoji(ax: AxiomContext, input: EmojiText): EmojiContainsResult {
   const result = new EmojiContainsResult();
   const text = input.getText() ?? '';
-  const err = checkText(text);
-  if (err) {
-    result.setError(err);
-    return result;
-  }
   result.setContainsEmoji(hasEmoji(text));
   return result;
 }

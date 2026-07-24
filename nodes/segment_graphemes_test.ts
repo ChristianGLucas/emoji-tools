@@ -1,7 +1,6 @@
 import { EmojiText } from '../gen/messages_pb';
 import { segmentGraphemes } from './segment_graphemes';
 import { ctx } from './testkit';
-import { MAX_TEXT_LENGTH } from './emoji_helper';
 
 describe('SegmentGraphemes', () => {
   it('splits mixed text into hand-verified clusters, each a single array element for composed emoji', () => {
@@ -30,11 +29,4 @@ describe('SegmentGraphemes', () => {
     expect(result.getClustersList()).toHaveLength(0);
   });
 
-  it('returns a structured error on oversized text', () => {
-    const input = new EmojiText();
-    input.setText('a'.repeat(MAX_TEXT_LENGTH + 1));
-    const result = segmentGraphemes(ctx, input);
-    expect(result.getError()).not.toBe('');
-    expect(result.getClustersList()).toHaveLength(0);
-  });
 });

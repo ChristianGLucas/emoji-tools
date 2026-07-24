@@ -1,7 +1,6 @@
 import { EmojiName } from '../gen/messages_pb';
 import { lookupEmojiByName } from './lookup_emoji_by_name';
 import { ctx } from './testkit';
-import { MAX_TOKEN_LENGTH } from './emoji_helper';
 
 describe('LookupEmojiByName', () => {
   it('finds the exact published Unicode code point for a well-known name (independent oracle: Unicode Consortium FIRE = U+1F525)', () => {
@@ -46,10 +45,4 @@ describe('LookupEmojiByName', () => {
     expect(result.getError()).not.toBe('');
   });
 
-  it('returns a structured error for an oversized name', () => {
-    const input = new EmojiName();
-    input.setName('a'.repeat(MAX_TOKEN_LENGTH + 1));
-    const result = lookupEmojiByName(ctx, input);
-    expect(result.getError()).not.toBe('');
-  });
 });

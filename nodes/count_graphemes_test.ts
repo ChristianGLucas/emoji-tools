@@ -1,7 +1,6 @@
 import { EmojiText } from '../gen/messages_pb';
 import { countGraphemes } from './count_graphemes';
 import { ctx } from './testkit';
-import { MAX_TEXT_LENGTH } from './emoji_helper';
 
 describe('CountGraphemes', () => {
   it('counts a ZWJ-joined family sequence as ONE grapheme cluster -- per the published Unicode UAX #29 extended grapheme cluster rules (independent spec oracle), not per code point', () => {
@@ -45,10 +44,4 @@ describe('CountGraphemes', () => {
     expect(result.getCount()).toBe(0);
   });
 
-  it('returns a structured error on oversized text', () => {
-    const input = new EmojiText();
-    input.setText('a'.repeat(MAX_TEXT_LENGTH + 1));
-    const result = countGraphemes(ctx, input);
-    expect(result.getError()).not.toBe('');
-  });
 });

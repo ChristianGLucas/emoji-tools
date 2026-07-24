@@ -1,7 +1,6 @@
 import { EmojiText } from '../gen/messages_pb';
 import { countEmoji } from './count_emoji';
 import { ctx } from './testkit';
-import { MAX_TEXT_LENGTH } from './emoji_helper';
 
 describe('CountEmoji', () => {
   it('counts a composed sequence (skin tone / ZWJ family / two flags) as 4 -- hand-verified against the published Unicode sequences, independent of the implementation', () => {
@@ -37,10 +36,4 @@ describe('CountEmoji', () => {
     expect(result.getCount()).toBe(3);
   });
 
-  it('returns a structured error on oversized text', () => {
-    const input = new EmojiText();
-    input.setText('a'.repeat(MAX_TEXT_LENGTH + 1));
-    const result = countEmoji(ctx, input);
-    expect(result.getError()).not.toBe('');
-  });
 });
